@@ -1,0 +1,8 @@
+node_modules
+server-configuration
+.gitignore
+.git
+exclude_me.txt
+exclude_me_setup.txt
+deploy.sh
+setup.sh
