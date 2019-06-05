@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const WebSocket = require('ws');
 const wss = new WebSocket.Server({ port: 3003 });
-const { find, findOne, insertOne, updateOne, updateMany, deleteOne, deleteMany } = require('./mongodb');
+const { find, findOne, insertOne, insertMany, updateOne, updateMany, deleteOne, deleteMany } = require('./mongodb');
 const ObjectId = require('mongodb').ObjectId;
 
 deleteMany({});
@@ -83,12 +83,15 @@ function joinRoom(ws, msg) {
           "players": { username: msg.username, move: newUserMove, clientID: ws.id }
         }
       }).then(result => {
+        if (!result.result.ok) {
+          throw new Error('Something went wrong joining the current game.');
+        };
         findOne({"_id": ObjectId(msg.gameId)}).then(game => {
           const message = {
             gameId: msg.gameId,
             type: 'joinGame',
             move: newUserMove,
-            roomName: result.roomName,
+            roomName: game.roomName,
             username: msg.username,
             clientID: ws.id
           };
@@ -284,7 +287,29 @@ app.use((_, res, next) => {
 
 app.get('/availablegames', (_, res) => {
   find({}).then(games => {
-    res.json(games);
+    let orderedArray = games.sort(function(a,b){
+      if (a.date > b.date) return -1;
+      if (a.date < b.date) return 1;
+      return 0;
+    });
+    res.json(orderedArray);
+  });
+});
+
+app.get('/findGames', (req, res) => {
+  const keyName = req.query.name;
+  find({}).then(items => {
+    const array = items.filter(item => {
+      return item.roomName.toLowerCase().includes(keyName.toLowerCase()) || ObjectId(item._id).toString().includes(keyName);
+    });
+    let orderedArray = array.sort(function(a,b){
+      if (a.date > b.date) return -1;
+      if (a.date < b.date) return 1;
+      return 0;
+    });
+    res.json(orderedArray);
+  }).catch(err => {
+    res.status(400).json({type: 'error', message: err.message})
   });
 });
 

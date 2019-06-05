@@ -75,6 +75,30 @@ function dbInsertOneMethod(dbFactory) {
 const insertOneFactory = dbInsertOneFactory(connection);
 const insertOne = dbInsertOneMethod(insertOneFactory);
 
+function dbInsertManyFactory(connection) {
+  return function factory(data) {
+    return connection.then(client => {
+      return new Promise((resolve, reject) => {
+        client.db('tictactoe').collection('room').insertMany(data, (err, result) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(result);
+          };
+        });
+      });
+    });
+  };
+};
+function dbInsertManyMethod(dbFactory) {
+  return function method(data) {
+    return dbFactory(data)
+  };
+};
+
+const insertManyFactory = dbInsertManyFactory(connection);
+const insertMany = dbInsertManyMethod(insertManyFactory);
+
 function dbUpdateOneFactory(connection) {
   return function factory(id, data) {
     return connection.then(client => {
@@ -175,6 +199,7 @@ module.exports = {
   find,
   findOne,
   insertOne,
+  insertMany,
   updateOne,
   updateMany,
   deleteOne,
