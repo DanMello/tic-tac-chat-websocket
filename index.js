@@ -15,6 +15,7 @@ function randomUsername() {
 };
 
 function broadcast(data,gameId) {
+  
   findOne({"_id": ObjectId(gameId)}).then(game => {
     game.players.map(player => {
       Array.from(wss.clients)
@@ -34,6 +35,7 @@ function broadcastToAll(data) {
 };
 
 function handleError(ws, err) {
+
   const error = {
     type: "error",
     message: err.message
@@ -163,7 +165,8 @@ function leaveGame(ws, msg) {
       } else {
         const messageToRoom = {
           type: 'notifyUserLeft',
-          username: msg.username
+          username: msg.username,
+          playerInGame: game.players[0]
         };
         broadcast(JSON.stringify(messageToRoom), msg.gameId);
       };
@@ -300,7 +303,7 @@ app.get('/findGames', (req, res) => {
   const keyName = req.query.name;
   find({}).then(items => {
     const array = items.filter(item => {
-      return item.roomName.toLowerCase().includes(keyName.toLowerCase()) || ObjectId(item._id).toString().includes(keyName);
+      return item.roomName.toLowerCase().includes(keyName.toLowerCase()) || ObjectId(item._id).toString().includes(keyName.toLowerCase());
     });
     let orderedArray = array.sort(function(a,b){
       if (a.date > b.date) return -1;
@@ -339,9 +342,11 @@ wss.on('connection', function connection(ws) {
     };
   });
   ws.on('error', function error(err) {
-    console.log('error', err);
+    console.log('error', err)
+    lostConnection(ws);
   });
-  ws.on('close', function close() {
+  ws.on('close', function close(e) {
+    console.log('event', e)
     lostConnection(ws);
   });
 });
