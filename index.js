@@ -1,4 +1,5 @@
 const express = require('express');
+const { URL } = require('url');
 const app = express();
 const WebSocket = require('ws');
 const wss = new WebSocket.Server({ port: 3003 });
@@ -316,8 +317,12 @@ app.get('/findGames', (req, res) => {
   });
 });
 
-wss.on('connection', function connection(ws) {
-  ws.id = randomUsername();
+wss.on('connection', function connection(ws, req) {
+  const url_string = `${req.headers.origin}${req.url}`;
+  const url = new URL(url_string);
+  const clientID = url.searchParams.get("clientID");
+  console.log(clientID)
+  ws.id = clientID || randomUsername();
   ws.on('message', function incoming(message) {
     const msg = JSON.parse(message);
     switch(msg.type) {
@@ -341,13 +346,13 @@ wss.on('connection', function connection(ws) {
         break;
     };
   });
-  ws.on('error', function error(err) {
-    console.log('error', err)
+  ws.on('error', function error() {
     lostConnection(ws);
   });
-  ws.on('close', function close(e) {
-    console.log('event', e)
-    lostConnection(ws);
+  ws.on('close', function close(code) {
+    if (code !== 1006) {
+      lostConnection(ws);
+    };
   });
 });
 app.listen(3004);
