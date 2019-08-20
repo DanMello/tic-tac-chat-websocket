@@ -1,6 +1,6 @@
 
 const MongoClient = require('mongodb').MongoClient;
-const url = "mongodb://tictacdan:1234@localhost:27017/tictactoe";
+const url = process.env.MONGO_URL;
 const connection = MongoClient.connect(url, { useNewUrlParser: true });
 
 function dbFindFactory(connection) {
